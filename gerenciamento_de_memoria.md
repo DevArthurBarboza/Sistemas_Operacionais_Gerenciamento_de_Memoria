@@ -16,7 +16,7 @@ Figura C : Presente nos primeiros computadores pessoais
 
 Tanto os modelos A e C apresentam uma vulnerabilidade à integridade do sistema operacional por estar presente em memória RAM, sendo passível de alteração pelo usuário.
 
-## Problema de Endereçamento pós-Swapping
+## Problema de Endereçamento - Memória Física
 
 Um dos maiores problemas no endereçamento de memória quando o sistema faz acesso direto ao mesmo, é quando um processo aponta para um endereço a fim de realizar uma instrução neste, o sistema realiza um swapping e o novo processo carregado na memória principal (em uma posição diferente de 0) aponta para a memória física a partir do endereço 0 e não usando como base seu real endereço.
 
