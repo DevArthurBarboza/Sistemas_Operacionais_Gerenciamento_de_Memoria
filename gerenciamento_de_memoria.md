@@ -123,7 +123,24 @@ Este algoritmo diferente dos outros, implementa uma lista em cada um de seus nó
 
 ## Memória Virtual
 
+Com o passar do tempo uma alta demanda por memória foi surgindo, por consequência do crescimento dos softwares e a multiprogramação, se tornou fácil que um único processo pudesse ocupar toda a memória ou até que isso seja insuficiente. Uma forma de solucionar isso foi através da divisão dos programas em módulos pequenhos, conhecidos como sobreposições.
 
-Ex : um programa alocado no endereço 1024 realiza a instrução ```JMP 30```. 
+Através de um gerenciador de sobreposições, os programas eram gerenciados e carregados do disco para a memória.
 
-Ao ser carregada na memória, 
+Mas essa solução não era totalmente efetiva, pois a divisão do programa em módulos devia ser feita pelo programador e era propensa a muitos erros.
+
+Através da memória virtual esse problema pôde ser solucionado com efetividade. Cada programa tem seu próprio espaço de endereçamento que é dividido em blocos chamados de páginas, que nada mais é do que uma série de endereçamentos. 
+
+As páginas são mapeadas na memória física, porém não precisam se encontrar todas na memória ao mesmo tempo para o programa executar. Quando o programa referencia um endereço que está na memória física, o hardware realiza o mapeamento necessário com agilidade, caso *não* esteja presente na memória, o sistema operacional é alertado e é realizado uma busca da parte que faltou, após isso é reexecutado a instrução que falhou. A memória virtual funciona muito bem quando implementada em sistemas de multiprogramação, pois pequenos espaços de endereçamento são mapeados e podem ser alocados simultâneamente conforme a necessidade dos processos que se encontram em execução 
+
+
+### Paginação
+
+O espaço de endereçamento virtual consiste em unidades de tamanho fixo chamadas de páginas. Unidades na memória física são chamadas de quadros de páginas. Geralmente ambos são do mesmo tamanho.
+
+Os sistemas operacionais atuais, oferecem a possibilidade de utilizar combinações de tamanhos variados para cada necessidade do sistema 
+Ex : 12 MB para aplicações do usuário e 4 GB para o núcleo.  
+
+Quando um processo realiza a instrução ``` MOV REG,0 ```, o endereço virtual 0 é enviado para a MMU e está detecta a página em que situa o processo em execução e então retorna o endereço físico
+
+Ex : ``` MOV REG,0 ``` executado na página 3. Levando em consideração que cada página possui o comprimento exato de 4096 endereços, podemos concluir que o processo se encontra entre os endereços físicos 8192 à 12288. Logo a instrução ```MOV REG,0``` será alterada para ```MOV REG,8192```, que é o valor referente ao espaço de endereçamento alocado para o processo, seu endereçamento local/virtual índice 0
