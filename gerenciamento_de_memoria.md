@@ -31,7 +31,7 @@ Surgiu-se então os espaços de endereçamento, uma abstração em que cada proc
 ## Registradores Base e Registradores Limite
 
 Uma solução que foi aplicada para resolver o problema de conflito de endereçamento foi através dos registradores base e limite, os quais são usados quando um programa é carregado na memória. O registrador base é carregado com o endereço físico onde o programa começa na memória e o registrador limite carrega o comprimento do programa, para cada programa a ser carregado na memória o registrador base apresentará um valor cada vez maior, supondo que um programa será carregado em endereços posteriores aos outros.
-
+![](assets/registradores_base_limite.png)
 A grande vantagem dessa implementação é que os registradores oferecem para cada processo, um espaço de endereçamento local, protegido e logicamente separado dos outros endereçamentos.
 
 Toda vez que um processo referenciar a memória, a CPU irá adicionar o valor base ao endereço gerado para o processo antes de enviá-lo para o barramento de memória, assim como verificar se este valor é igual ou maior do que o valor do registrador limite.
@@ -44,6 +44,8 @@ A quantidade de processos que se encontra presente apenas para realizar funçõe
 Algumas estratégias foram desenvolvidas para solucionar este problema, uma delas é através do swapping, em que **um processo é carregado a partir do disco para a memória principal em sua totalidade, é executado por um tempo e então retornado ao disco, dando espaço para execução de outros.**
 
 Outra forma de resolver esse problema é através da memória virtual, o qual os programas podem ser executados mesmo estando apenas parcialmente na memória principal.
+
+![](/assets/troca_processos.png)
 
 Ao realizar o swapping do mesmo processo muitas vezes, este muito provalvelmente não será alocado ao seu endereçamento anterior, sendo assim é trabalho do hardware durante a execução, realocar os endereçamentos conforme sua posição.
 
@@ -67,10 +69,59 @@ Durante a troca de processos, múltiplos espaços na memória são ocupados e de
 
 
 
+## Gerenciamento da Memória Livre
+
+Ao ser designada dinâmicamente, a memória principal passa a ser gerenciada pelo Sistema Operacional. Esse gerenciamento pode ser implementado de duas formas : mapas de bits e listas encadeadas.
+
+### Mapas de bits
+
+Através do mapa de bits, a memória é dividida em unidades muito pequenas que são mapeadas e identificadas como ocupadas ou não (1 ou 0).
+
+Uma informação muito importante é o tamanho de cada unidade de alocação. Quanto menor for seu tamanho maior será o mapa de bits, sendo assim podemos também afirmar que quanto maior for a unidade de alocação, menor será o tamanho do mapa de bits, no entando uma quantidade considerável de memória será perdida caso o tamanho não seja múltiplo exato da unidade de alocação.
+
+![](assets/mapas_bits.png) 
+
+Uma desvantagem é que quando for carregar um processo na memória com tamanho de *x* unidades, o gerenciador de memória irá buscar no mapa por uma sequẽncia de *x* bits 0 consecutivos, no entanto essa busca de um comprimento determinado é lenta.
 
 
+### Listas Encadeadas
 
-## Memoria Virtual
+Outra forma de controlar o uso da memória é através de listas encadeadas que estarão guardando informações referente aquele endereçamento de memória.
+
+Através da lista encadeadas, é possível armazenar se o endereço se encontra ocupado por um processo ou se está livre, assim como onde ele começa e o seu comprimento, sem mencionar que cada endereçamento passa a ter uma referência do próximo, mesmo ele estando livre ou ocupado 
+
+![](assets/lista_encadeada.png)
+
+Ao implementar uma lista encadeada para gerenciar a memória, é possível determinar critérios de ordenação. Caso os processos e espaços livres sejam ordenados por seus endereços, é possível implementar algoritmos para alocação de memória.
+
+Para os algoritmos mencionados abaixo, leve em consideração que a MMU possui a informação de quanto de memória deve ser alocada
+
+### First Fit (primeiro encaixe)
+
+A MMU examina a lista de segmentos buscando por um espaço livre que seja grande o suficiente para o processo ser alocado. Após encontrado, a menos que o tamanho seja exatamente o mesmo necessário pelo processo (algo muito incomum), o espaço livre então é dividido entre 2 partes, uma que será composta pelo processo e a outra que permanecerá livre.
+ 
+### Next Fit 
+
+Uma pequena variação do First Fit. Invés de percorrer toda a lista, o algoritmo passa a percorrer a partir de onde havia parado anteriomente. A partir de simulações realizadas por Bays(1977), foi demonstrado que o Next Fit tem um desempenho ligeiramente pior do que o First Fit
+
+
+### Best Fit 
+
+O Best Fit faz uma busca total na lista para escolher o menor espaço livre que seja adequado para alocar o processo. Invés de selecionar o primeiro espaço livre que encontrar, é selecionado o espaço livre mais próximo do tamanho do processo, de forma que evite a ocupar grupos de espaços maiores, permitindo que esses sejam usados em situações propícias
+
+Este algoritmo é mais lento do que o First Fit pois pra cada chamada deve percorrer a lista inteira, e surpreendentemente também é o que resulta em maior desperdício, pois passa a preencher espaços minúsculos e irrelevantes na memória
+
+### Worst Fit
+
+Este algoritmo busca utilizar os espaços em que se sobrarão maior espaço livre, apesar de aparentar um péssimo critério, isso favorece para que se mantenha frequente os espaços maiores na memória em que outros processos irão utilizar, diminuindo a fragmentação
+
+### Quick Fit 
+
+Este algoritmo diferente dos outros, implementa uma lista em cada um de seus nós as quais armazena os endereçamento referente à cada comprimento que for solicitado, de forma que se torna extremamente rápido a busca entre os espaços disponíveis para alocação
+
+![](assets/quick_fit.png)
+
+## Memória Virtual
 
 
 Ex : um programa alocado no endereço 1024 realiza a instrução ```JMP 30```. 
