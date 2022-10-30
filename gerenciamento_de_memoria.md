@@ -31,7 +31,10 @@ Surgiu-se então os espaços de endereçamento, uma abstração em que cada proc
 ## Registradores Base e Registradores Limite
 
 Uma solução que foi aplicada para resolver o problema de conflito de endereçamento foi através dos registradores base e limite, os quais são usados quando um programa é carregado na memória. O registrador base é carregado com o endereço físico onde o programa começa na memória e o registrador limite carrega o comprimento do programa, para cada programa a ser carregado na memória o registrador base apresentará um valor cada vez maior, supondo que um programa será carregado em endereços posteriores aos outros.
+
 ![](assets/registradores_base_limite.png)
+
+
 A grande vantagem dessa implementação é que os registradores oferecem para cada processo, um espaço de endereçamento local, protegido e logicamente separado dos outros endereçamentos.
 
 Toda vez que um processo referenciar a memória, a CPU irá adicionar o valor base ao endereço gerado para o processo antes de enviá-lo para o barramento de memória, assim como verificar se este valor é igual ou maior do que o valor do registrador limite.
@@ -131,7 +134,7 @@ Mas essa solução não era totalmente efetiva, pois a divisão do programa em m
 
 Através da memória virtual esse problema pôde ser solucionado com efetividade. Cada programa tem seu próprio espaço de endereçamento que é dividido em blocos chamados de páginas, que nada mais é do que uma série de endereçamentos. 
 
-As páginas são mapeadas na memória física, porém não precisam se encontrar todas na memória ao mesmo tempo para o programa executar. Quando o programa referencia um endereço que está na memória física, o hardware realiza o mapeamento necessário com agilidade, caso *não* esteja presente na memória, o sistema operacional é alertado e é realizado uma busca da parte que faltou, após isso é reexecutado a instrução que falhou. A memória virtual funciona muito bem quando implementada em sistemas de multiprogramação, pois pequenos espaços de endereçamento são mapeados e podem ser alocados simultâneamente conforme a necessidade dos processos que se encontram em execução 
+As páginas são mapeadas na memória física, porém não precisam se encontrar todas na memória ao mesmo tempo para o programa executar. Quando o programa referencia um endereço que está na memória física, o hardware realiza o mapeamento necessário com agilidade, caso *não* esteja presente na memória (page fault), o sistema operacional é alertado e é realizado uma busca pelo quadro de página que faltou, após isso é reexecutado a instrução que falhou. A memória virtual funciona muito bem quando implementada em sistemas de multiprogramação, pois pequenos espaços de endereçamento são mapeados e podem ser alocados simultâneamente conforme a necessidade dos processos que se encontram em execução 
 
 
 ### Paginação
@@ -143,4 +146,24 @@ Ex : 12 MB para aplicações do usuário e 4 GB para o núcleo.
 
 Quando um processo realiza a instrução ``` MOV REG,0 ```, o endereço virtual 0 é enviado para a MMU e está detecta a página em que situa o processo em execução e então retorna o endereço físico
 
-Ex : ``` MOV REG,0 ``` executado na página 3. Levando em consideração que cada página possui o comprimento exato de 4096 endereços, podemos concluir que o processo se encontra entre os endereços físicos 8192 à 12288. Logo a instrução ```MOV REG,0``` será alterada para ```MOV REG,8192```, que é o valor referente ao espaço de endereçamento alocado para o processo, seu endereçamento local/virtual índice 0
+Ex : ``` MOV REG,0 ``` executado na página 3. Levando em consideração que cada página possui o comprimento exato de 4096 endereços, podemos concluir que o processo se encontra entre os endereços físicos 12288 à 16324. Logo a instrução ```MOV REG,0``` será alterada para ```MOV REG,12288```, que é o valor referente ao espaço de endereçamento alocado para o processo, seu endereçamento local/virtual índice 0
+
+Os endereços virtuais (presente no espaço de endereçamento virtual) não é direcionado ao barramento da memória, eles referenciam à MMU que mapeia estes endereços virtuais e retorna o endereço físico absoluto. 
+
+No entanto ainda temos um problema a ser resolvido : a memória virtual continua sendo maior que a memória física, e o hardware como forma de identificar quais estão presente de fato na memória física, utiliza de um bit sinalizando Presente/Ausente.
+
+### Tabelas de Páginas
+
+A tabelas de páginas é a estrutura responsável pra realizar o mapeamento das páginas virtuais nos quadros físicos. Podemos associar a tabela de página à uma função matemática que recebe o índice da página virtual como um parâmetro e seu resultado é o índice do quadro físico. Dessa forma, qualquer endereço virtual poderá ser convertido em um endereçamento físico.
+
+### Estrutura de Entrada da Tabela de Páginas
+
+Normalmente 32 bits é o valor referente ao tamanho de uma entrada na tabela de página, no entanto esse número costuma variar. Outras informações mais relevantes são os componentes presentes na entrada da tabela : o número do quadro da página é o mais importante pois é usado para realizar o mapeamento. Também é informado um bit de presente/ausente o qual caso for 1 indica que o endereço está presente na memória, mas caso seja 0, indica que a página virtual não se encontra na memória e realizar uma entrada com essa página de tabela resultará em um page fault. Também é presente o campo de permissão, o qual possui 2 bits que informam se é permitido acesso de leitura e escrita, ou mesmo 3 bits para incluir o acesso de execução.
+
+Sempre que uma página receber uma alteração em seu conteúdo o bit de modificada será configurado pelo hardware, esse bit é muito importante pois indica se a página foi alterada e tem alguma diferença para sua versão em disco. Quando o sistema for buscar por outro quadro na memória, irá validar se a página a qual for retirada no endereçamento virtual foi modificada ou não (é suja ou não). Caso sim, o sistema registra sua alteração no disco, caso não então a página apenas será abandonada, pois no disco já está presente seu conteúdo e nenhuma alteração deve ser feita. 
+
+O bit referenciada é usado para indicar quais páginas são referenciadas para operações de leitura ou escrita, isso auxilia o Sistema Operacional a escolher qual página deve ser retirada da memória virtual em virtude de outra, de forma em que o Sistema Operacional priorize retirar páginas não referenciadas, a fim de evitar um possível page fault.
+
+O último bit determina se a cache deve estar habilitada ou não. Alguns serviços ou programas podem necessitar a coleta de dados de E/S, de forma que utilizar a cache (um dado relativamente antigo e não recém informado pelo usuário) possa ser prejudicial por passar dados inválidos ou incoerentes. A validação da cache é um dos problemas computacionais mais presentes nos sistemas hoje em dia, envolvendo ambientes desktop com o cenário dos sistemas operacionais e até mesmo em páginas e servidores web.
+
+Obs : O endereço de disco o qual contém a página quando está não se encontra na memória não é referenciado na tabela de páginas, pois a tabela de páginas armazena apenas os endereços virtuais para que a MMU possa realizar o mapeamento correto entre a memória virtual e a memória física.
