@@ -156,7 +156,7 @@ No entanto ainda temos um problema a ser resolvido : a memória virtual continua
 
 A tabelas de páginas é a estrutura responsável pra realizar o mapeamento das páginas virtuais nos quadros físicos. Podemos associar a tabela de página à uma função matemática que recebe o índice da página virtual como um parâmetro e seu resultado é o índice do quadro físico. Dessa forma, qualquer endereço virtual poderá ser convertido em um endereçamento físico.
 
-### Estrutura de Entrada da Tabela de Páginas
+### Estrutura de  <mark> Entrada da Tabela de Páginas
 
 Normalmente 32 bits é o valor referente ao tamanho de uma entrada na tabela de página, no entanto esse número costuma variar. Outras informações mais relevantes são os componentes presentes na entrada da tabela : o número do quadro da página é o mais importante pois é usado para realizar o mapeamento. Também é informado um bit de presente/ausente o qual caso for 1 indica que o endereço está presente na memória, mas caso seja 0, indica que a página virtual não se encontra na memória e realizar uma entrada com essa página de tabela resultará em um page fault. Também é presente o campo de permissão, o qual possui 2 bits que informam se é permitido acesso de leitura e escrita, ou mesmo 3 bits para incluir o acesso de execução.
 
@@ -225,3 +225,26 @@ Uma modificação para o algoritmo FIFO é o algoritmo de Segunda Chance, o qual
 
 Outra alternativa ao Segunda Chance é o algoritmo de relógio, semelhante ao citado anteriormente, este também analisa se as páginas estão sendo referenciadas através do bit R, no entanto esse algoritmo não realiza instruções para movimentação dos elementos da lista. 
 Conforme descrito pelo nome, os quadros de páginas permanecem em uma lista circular no formato de um relógio, e um ponteiro é usado para analisar cada elemento, sendo então evitado o uso da CPU nas instruções de movimentação de cada página.
+
+
+### Algoritmo de Páginas Usadas Menos Recentemente (LRU)
+
+Uma boa estratégia (relativamente próxima do algoritmo ótimo), é a LRU, o qual consiste da premissa em que páginas que foram usadas com alta frequência recentemente, continuarão sendo usadas futuramente, assim como páginas que não usadas há um bom tempo, continuarão sendo não usadas. Dessa forma o sistema deve priorizar a retirada de páginas que não são usadas pelo maior tempo registrado.
+
+No entanto, esse algoritmo apresenta um custo caro para sua implementação, sendo necessário o uso de uma lista encadeada para todas as páginas da memória, de forma que a primeira página da lista seja a página mais recente a ser referenciada, e a não referenciada há mais tempo no final da lista.
+Como a cada referencia de memória é necessário que a lista seja atualizada e muito provalvelmente sua ordem seja alterada, este algoritmo apresenta um custo muito alto de recursos do hardware, mesmo utilizando de hardwares especiais para isso (um exemplo seria um contador para cada página da lista, a qual iria incrementar a cada referência daquela página. Assim que fosse necessário remover uma página para adicionar outra, o sistema analisa os contadores em busca da página menos recente a ser referenciada).
+
+###  <mark> Algoritmo do Conjunto de Trabalho 
+
+Durante a execução de um processo, este passa a necessitar de determinadas páginas referentes à dados locais, bibliotecas, informações de execução e muitas outras informações.
+A ideia do conjunto de trabalho, é que seja importado as páginas referentes à este processo na memória, antes que o processo seja colocado para executar, de forma que minimize o tempo de paginação do processo (paginar um processo antes que este seja colocado para executar, é conhecido como pré-paginação)
+
+### Algoritmo WSClock
+
+O WSClock é um algoritmo bem performático que se baseia no algoritmo de relógio e usa informações do conjunto de trabalho, sendo de fácil implementação e alto uso nos sistemas modernos.
+
+Inicialmente uma lista circular de quadros de páginas se encontra vazia, conforme as páginas são carregadas na memória, elas são adicionadas na lista formando um círculo.
+
+Cada página possui o instante de seu último uso assim como o bit R e M. 
+A verificação de qual página será substituida se dá pelo ponteiro, este que já se encontra apontando para uma página, verifica se o bit R desta página é 1, caso seja então não é uma página ideal para ser substituida, o SO altera o bit R para 0 e passa a verificar as outras páginas da lista até encontrar uma com bit R = 0. 
+Ao encontrar uma página com bit R = 0, verifica se sua idade é maior do que o tempo de execução do processo e se a página se encontra limpa, caso verdadeiro então essa página não faz parte do conjunto de trabalho e uma cópia se encontra em disco, sendo assim o SO realiza a substituição da página. Caso a página esteja suja então o processo de escrita em disco é escalonado e o ponteiro segue a busca com a página seguinte, a fim de evitar um chaveamento de processo. Caso todas as páginas se encontrem limpas e ambas tenham idade menor do que o tempo de execução do processo, então todas fazem parte do conjunto de trabalho e qualquer uma deve ser selecionada para a substituição, tendo em vista que não é possível otimizar a paginação sob essas cirtunstâncias. 
