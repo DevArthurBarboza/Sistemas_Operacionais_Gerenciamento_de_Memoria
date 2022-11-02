@@ -190,3 +190,38 @@ Uma TLB relativamente grande apresenta de forma surpreendente um bom desempenho,
 ### Ausência na TLB
 
 Existem várias formas de ocorrer uma ausência de TLB e suas classificações, uma delas é a **soft miss** (ausência leve), a qual a página se encontra na memória mas não na TLB, sendo necessário apenas que a TLB seja atualizada, levando aproximadamente 10 à 20 instruções em alguns nanossegundos. Já o **hard miss** (ausência completa) ocorre quando a página não se encontra na memória, sendo necessário realizar uma busca no disco, levando alguns milisegundos (milhares de vezes mais lento do que o soft miss).
+
+
+## Algoritmos de Substituição de Páginas
+
+Para que o SO apresente uma performance satisfatória, é necessário implementar algoritmos de substituição de páginas visando um principal critério : quais páginas devem ser removidas para que novas sejam inseridas na memória ? Nos exemplos abaixo.
+
+
+### Algoritmo Ótimo
+
+Fácil de descrever mas difícil de ser implementado, esse algoritmo consiste na ideia de que cada página será rotulada com um número referente às instruções que serão executadas antes dela, de forma que o SO irá retirar a página com maior rótulo, adiando o evento de page fault o mais tardar possível. 
+
+A maior dificuldade no entanto é conseguir prever os rótulos referente a cada página, sendo necessário uma primeira exeução do programa para guardar estes dados e então assim na segunda, realizar uma otimização com base na substituição correta das páginas que serão usadas mais tarde pelas páginas já solicitadas. 
+
+
+### Algoritmo de Páginas Não Usadas Recentemente (NRU)
+
+O Sistema Operacional faz uso dos Bits R e M (Referenciado e Modificado, presente em cada entrada de uma página) para que em uma falta de página, inspecione as páginas e as divide em categorias baseada em seus valores atuais, sendo as categorias definidas como :
+
+Classe 0: não referenciada, não modificada.
+Classe 1: não referenciada, modificada.
+Classe 2: referenciada, não modificada.
+Classe 3: referenciada, modificada.
+
+O NRU dará prioridade na remoção para as classes mais baixas, ou seja, ele prioriza páginas não referenciadas do que as páginas modificadas (no caso de serem páginas modificadas, é necessário realizar que estas sejam escritas no disco). O NRU é fácil de compreender, implementar e oferece um bom desempenho.
+
+### First In First Out (FIFO / Fila) - Segunda Chance
+
+Outro algoritmo também de fácil compreensão é o FIFO. O SO possui uma lista encadeada das páginas armazenadas na memória, em uma sequência das mais antigas para as mais recentes, de forma que quando necessário remover uma página será removida a primeira da fila, e a nova página a ser incluida, será incluida no final da fila. No entanto sua forma mais pura de implementação apresenta um problema no desempenho do sistema, pois apesar de antiga, uma página no começo da fila pode estar sendo muito referenciada.
+
+Uma modificação para o algoritmo FIFO é o algoritmo de Segunda Chance, o qual antes do ato de remover uma página antiga X presente no índice 0, é analisado o bit R de X. Caso o bit R seja 0 então X é pouco referenciada e deve ser removida da memória (caso X esteja suja, será necessário que seja escrita no disco), caso seja 1 então X é movida para o final da fila, pois foi recentemente referenciada e ainda pode ser requisitado seu uso. A busca por uma página não referenciada será continuada a partir do elemento antes no índice 1, agora no índice 0. Caso todas as páginas tenham o bit R como 1, então o algoritmo fará uso do conceito FIFO em sua forma mais pura. No entanto essa modificação é extremamente ineficiente pois realiza inúmeras instruções em sua lista no que diz respeito à mover as páginas de posição.
+
+### Algoritmo do Relógio
+
+Outra alternativa ao Segunda Chance é o algoritmo de relógio, semelhante ao citado anteriormente, este também analisa se as páginas estão sendo referenciadas através do bit R, no entanto esse algoritmo não realiza instruções para movimentação dos elementos da lista. 
+Conforme descrito pelo nome, os quadros de páginas permanecem em uma lista circular no formato de um relógio, e um ponteiro é usado para analisar cada elemento, sendo então evitado o uso da CPU nas instruções de movimentação de cada página.
