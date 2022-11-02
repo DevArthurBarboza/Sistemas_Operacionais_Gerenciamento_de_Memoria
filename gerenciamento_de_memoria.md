@@ -2,7 +2,7 @@
 
 ## Abstração de Memória
 
-Inicialmente não se existia abstração de memória, existindo apenas a memória física a qual o computador tinha acesso direto. Por esse motivo não era viável a multiprogramação (presença de inúmeros usuários, processos e terminais simultâneamente, acessando a memória e fazendo uso dos recursos do sistema operacional).
+Inicialmente não havia abstração de memória, existindo apenas a memória física a qual o computador tinha acesso direto. Por esse motivo não era viável a multiprogramação (presença de inúmeros usuários, processos e terminais simultâneamente, acessando a memória e fazendo uso dos recursos do sistema operacional).
 Mesmo assim era possível várias implementações do acesso à memória como pode ser visto na imagem abaixo
 
 ![](assets/acesso_a_memoria_fisica.png)
@@ -167,3 +167,26 @@ O bit referenciada é usado para indicar quais páginas são referenciadas para 
 O último bit determina se a cache deve estar habilitada ou não. Alguns serviços ou programas podem necessitar a coleta de dados de E/S, de forma que utilizar a cache (um dado relativamente antigo e não recém informado pelo usuário) possa ser prejudicial por passar dados inválidos ou incoerentes. A validação da cache é um dos problemas computacionais mais presentes nos sistemas hoje em dia, envolvendo ambientes desktop com o cenário dos sistemas operacionais e até mesmo em páginas e servidores web.
 
 Obs : O endereço de disco o qual contém a página quando está não se encontra na memória não é referenciado na tabela de páginas, pois a tabela de páginas armazena apenas os endereços virtuais para que a MMU possa realizar o mapeamento correto entre a memória virtual e a memória física.
+
+## Implementação da Memória Virtual
+
+Durante a implementação da memória virtual, alguns requisitos devem ser atentidos, tais como rapidez no mapeamento do endereço virtual para o endereço físico, assim como o gerenciamento eficaz das dimensões do espaço de endereçamento virtual, pois caso esse seja grande então a tabela também será grande.
+Em situações da execução de instruções armazenadas na memória, caso o tempo de mapeamento seja lento, isso irá ocasionar um gargalo na exeução de cada instrução. 
+
+
+### TLB (Translation Lookaside Buffer)
+
+Uma forma de solucionar o problema de performance ocasionado pelo mapeamento e dimensão dos endereçamentos, é através do TLB, um hardware implementado dentro da MMU que realiza o mapeamento dos endereços virtuais para os endereços físicos sem o uso das tabelas de páginas. Sua entrada é composta por dados referente à cada página, tais como o número da página, bit de alteração da página, código de permissões e o quadro físico referente à página. 
+
+Quando um endereço virtual é informado para a MMU, esta verifica se o endereço virtual já se encontra em uma das entradas da TLB. Caso encontre e os bits de proteção sejam respeitados, é retornado o quadro da página através da TLB, sem que haja necessidade de acessar a tabela de páginas. Caso haja um código de proteção permitindo leitura e/ou execução, porém o sistema busca realizar uma operação de escrita, é gerado uma exception. No caso da página não estar presente na TLB, a MMU realiza a busca na tabela de páginas e retira uma das páginas armazenadas na TLB, substituindo-á pela página buscada. 
+
+### TLB Por softwares
+
+Todo o mapeamento da TLB é feito através do hardware dos computadores, com exceção de máquinas RISC (Computador com conjunto de instruções reduzidos) o qual o gerenciamento é feito em software, as entradas da TLB são carregadas pelo SO e no caso de uma ausência da TLB, é gerado uma falha e o problema é conduzido ao SO, que deve buscar pela página, substituir uma entrada da TLB pela página e então reexecutar a instrução que falhou.
+
+Uma TLB relativamente grande apresenta de forma surpreendente um bom desempenho, gerando um ganho através da simplificação da MMU, ofertando mais recursos da CPU para quaisquer outros requisitos que podem melhorar a performance do sistema. Além disso, foram implementadas várias formas de otimizar a TLB por software, um exemplo disso é a busca antecipada que o SO realiza por uma página que em breve será usada, carregando na TLB permitindo sua disponibilidade antes que ocorra uma ausência. Outra implementação é uma cache de entradas para a TLB, evitando novamente a busca por páginas na tabela de páginas.
+
+
+### Ausência na TLB
+
+Existem várias formas de ocorrer uma ausência de TLB e suas classificações, uma delas é a **soft miss** (ausência leve), a qual a página se encontra na memória mas não na TLB, sendo necessário apenas que a TLB seja atualizada, levando aproximadamente 10 à 20 instruções em alguns nanossegundos. Já o **hard miss** (ausência completa) ocorre quando a página não se encontra na memória, sendo necessário realizar uma busca no disco, levando alguns milisegundos (milhares de vezes mais lento do que o soft miss).
