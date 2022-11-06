@@ -248,3 +248,23 @@ Inicialmente uma lista circular de quadros de páginas se encontra vazia, confor
 Cada página possui o instante de seu último uso assim como o bit R e M. 
 A verificação de qual página será substituida se dá pelo ponteiro, este que já se encontra apontando para uma página, verifica se o bit R desta página é 1, caso seja então não é uma página ideal para ser substituida, o SO altera o bit R para 0 e passa a verificar as outras páginas da lista até encontrar uma com bit R = 0. 
 Ao encontrar uma página com bit R = 0, verifica se sua idade é maior do que o tempo de execução do processo e se a página se encontra limpa, caso verdadeiro então essa página não faz parte do conjunto de trabalho e uma cópia se encontra em disco, sendo assim o SO realiza a substituição da página. Caso a página esteja suja então o processo de escrita em disco é escalonado e o ponteiro segue a busca com a página seguinte, a fim de evitar um chaveamento de processo. Caso todas as páginas se encontrem limpas e ambas tenham idade menor do que o tempo de execução do processo, então todas fazem parte do conjunto de trabalho e qualquer uma deve ser selecionada para a substituição, tendo em vista que não é possível otimizar a paginação sob essas cirtunstâncias. 
+
+
+## Questões de Projeto
+
+### Tamanho de Página 
+
+Conforme as páginas são alocadas, ocorre um desperdício devido ao espaço alocado resultar em um espaço de sobra que não é utilizado pelo processo, isso ocorre porque dados, algoritmos e processos, nunca ocupam um número inteiro de páginas, ocorrendo o que chamamos de **fragmentação interna**.
+
+Por dois motivos o ideal é termos tamanho de páginas relativamente pequenos : um deles é a fragmentação interna citada anteriormente, outro motivo é que devido a um alto fracionamento do tamanho de páginas, a memória RAM pode ter melhor aproveitamento, pois cada processo irá alocar somente as páginas mais necessárias para seu funcionamento, do contrário haveria um desperdício de memória para alocar mais informações do que necessária.
+Se um processo precisa de dados referente à 4KB mas as páginas tem tamanho de 8KB, então será alocado 8KB na memória.
+
+Em compensação as páginas pequenas também trazem prejuízos em performance em algums detalhes : Quando um programa possui páginas pequenas suas tabelas de páginas serão maiores, sem mencionar que o tempo para realizar a transferência de uma página do disco para a memória é em maior parte devido ao posicionamento das partes móveis do HD. Um processo que precisa alocar muitas páginas irá decorrer de um longo período para essa alocação, pois só é possível alocar uma página por vez, caso as páginas fossem maiores e em menores quantidades, o tempo total para alocar as páginas seriam efetivamente menores.
+
+Para que o SO tenha um bom desempenho, é equilibrado o tamanho das páginas de acordo com uma série de fatores, de forma que minimize os danos à performance.
+
+
+### Espaços Separados de Instruções e dados
+
+Normalmente os espaços de endereçamentos eram usados para armazenar instruções e códigos, assim como dados de execução do programa. Ao longo do tempo isso foi se tornando um problema pois caso o espaço de endereçamento não fosse grande o suficiente, os programadores deveriam buscar saídas alternativas para atender à essa necessidade. 
+Uma solução que foi implementada e é usada hoje (em especial na cache do processador L1, pois essa apresenta grande escassez e é de extrema utilidade para a velocidade da CPU), é armazenar os dados em endereços separados das instruções, cada um com sua tabela de paginação independente dos outros e endereços físicos distintos. O SO não apresenta dificuldade na implementação dessa solução e por isso é aplicado até hoje.
