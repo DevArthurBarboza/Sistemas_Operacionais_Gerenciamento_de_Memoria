@@ -268,3 +268,14 @@ Para que o SO tenha um bom desempenho, é equilibrado o tamanho das páginas de 
 
 Normalmente os espaços de endereçamentos eram usados para armazenar instruções e códigos, assim como dados de execução do programa. Ao longo do tempo isso foi se tornando um problema pois caso o espaço de endereçamento não fosse grande o suficiente, os programadores deveriam buscar saídas alternativas para atender à essa necessidade. 
 Uma solução que foi implementada e é usada hoje (em especial na cache do processador L1, pois essa apresenta grande escassez e é de extrema utilidade para a velocidade da CPU), é armazenar os dados em endereços separados das instruções, cada um com sua tabela de paginação independente dos outros e endereços físicos distintos. O SO não apresenta dificuldade na implementação dessa solução e por isso é aplicado até hoje.
+
+
+## Segmentação 
+
+Durante o trabalho exercido por um compilador, inúmeras tabelas que são alocadas no mesmo endereço virtual vão aumentando seu tamanho de acordo com a necessidade do programa a ser compilado (a tabela de símbolos ou a pilha de chamada das funções, cada uma pode crescer independentemente das outras), podendo ultrapassar seu tamanho pré-determinado caso este programa apresente uma quantidade de entradas de alguma tabela maior do que o normal, ao mesmo tempo que outras tabelas podem não precisar de tanto espaço disponível para alocação. 
+Para resolvermos essa situação podemos fazer uso dos segmentos, que são espaços de endereçamento independentes uns dos outros e que podem crescer ou diminuir de acordo com a necessidade do programa a ser compilado, assim como apresentam comprimentos variados.
+
+Os segmentos são alocados em endereços separados uns dos outros, o que significa que vários segmentos podem crescer ao mesmo tempo sem gerar um conflito entre eles.
+Outro benefício do uso de segmentos é para a situação de bibliotecas compartilhadas entre vários processos. É possível alocar determinada biblioteca a ser compartilhada, para um determinado segmento que será acessado por vários processos, sendo dispensado a necessidade de armazenar a biblioteca nos endereços, em que os processos que farão uso desta, se encontram. 
+
+
